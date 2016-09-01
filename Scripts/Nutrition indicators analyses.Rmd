@@ -1,0 +1,97 @@
+---
+title: "Tanzania FNS indicators"
+author: "Vincent Linderhof"
+date: "29 augustus 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Results of 2008
+
+```{r cars}
+# Tom
+# dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2008/Data"
+
+# LEI Path
+# dataPath <- "W:/LEI/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2008/Data"
+
+# Vincent at home
+
+if(Sys.info()["user"] == "Tomas"){
+  dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2008/Data"
+} else {
+  dataPath <- "N:/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2008/Data"
+}
+
+# load packages
+library("haven")
+library("stringr")
+library("reshape2")
+library("dplyr")
+library("markdown")
+library("Deducer")
+
+options(scipen=999)
+
+setwd("D:/Models/CIMMYT/TZA")
+
+by_hhid <- readRDS(file="D:/Models/CIMMYT/TZA/Data/Nutrition indicators TZA 2008.Rda")
+
+#install.packages("Deducer")
+#library("Deducer")
+descriptive.table(vars = d(cereals, rootsandtubers, vegetables, pulsesandnuts, fruits, meat, eggs, fishandseafood,
+                           milkandmilkproducts, oilsandfats, sugar,condiments), data= by_hhid, 
+                  func.names = c("Mean","St. Deviation","Valid N"))
+
+myvars <- c("DDS", "FVS")
+by_hhidsub <- by_hhid[myvars]
+cor(by_hhidsub, use="all.obs", method="pearson")
+rm(by_hhidsub, myvars)
+
+# Histograms of nutrition indicators
+hist(by_hhid$DDS, freq = FALSE, ylim = c(0, 0.2), xlab="DDS", ylab="%", main="Freguency of DDS in 2008")
+
+hist(by_hhid$FVS, freq = FALSE, ylim = c(0, 0.1), xlab="FVS", ylab="%", main="Freguency of FVS in 2008")
+
+# Simple Scatterplot
+plot(by_hhid$DDS, by_hhid$FVS, main="Coherence between DDS and FVS in 2008", xlab="DDS ", ylab="FVS ", pch=19) 
+```
+
+Results of 2010
+
+```{r}
+by_hhid <- readRDS(file="D:/Models/CIMMYT/TZA/Data/Nutrition indicators TZA 2010.Rda")
+
+#install.packages("Deducer")
+#library("Deducer")
+descriptive.table(vars = d(cereals, rootsandtubers, vegetables, pulsesandnuts, fruits, meat, eggs, fishandseafood,
+                           milkandmilkproducts, oilsandfats, sugar,condiments), data= by_hhid, 
+                  func.names = c("Mean","St. Deviation","Valid N"))
+
+myvars <- c("DDS", "FVS")
+by_hhidsub <- by_hhid[myvars]
+cor(by_hhidsub, use="all.obs", method="pearson")
+rm(by_hhidsub, myvars)
+
+# Histograms of nutrition indicators
+hist(by_hhid$DDS, freq = FALSE, ylim = c(0, 0.2), xlab="DDS", ylab="%", main="Freguency of DDS in 2010")
+
+hist(by_hhid$FVS, freq = FALSE, ylim = c(0, 0.1), xlab="FVS", ylab="%", main="Freguency of FVS in 2010")
+
+# Simple Scatterplot
+plot(by_hhid$DDS, by_hhid$FVS, main="Coherence between DDS and FVS in 2010", xlab="DDS ", ylab="FVS ", pch=19) 
+
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

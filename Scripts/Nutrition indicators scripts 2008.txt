@@ -1,0 +1,105 @@
+#FOOD2008 <- read_dta(file.path(dataPath, "TZNPS1HHDTA_E/SEC_K1.dta")) %>%
+#  select(hhid, skcode = skcode, skq1 = skq1)
+
+#DDS2008  <- read.dta13(file.path(dataPath, "/TZNPS1HHDTA_E/SEC_K1.dta"))
+#DDS2008  <- subset(DDS2008, select=c(hhid, skcode, skq1))
+#VL: Variables skcode and skq1 are imported as factors and not as automic varibles
+
+#library(dplyr)
+#Only use when skcode and skq1 are classified as factors
+#NUTR2008C <- 
+#  mutate(DDS2008, foodgroup = 100*(skcode %in% c("Rice (paddy)", "Rice (husked)", "Maize (green, cob)",
+#                                                 "Maize (grain)", "Maize (flour)", "Millet and sorghum (grain)",
+#                                                 "Millet and sorghum (flour)", "Wheat, barley grain and other cereals",
+#                                                 "Bread", "Buns, cakes and biscuts", "Macaroini, spaghetti",
+#                                                 "Other cereal products" ))
+#                              +200*(skcode %in% c("Cassava fresh", "Sweet potatoes", "Yams/cocoyams",
+#                                                  "Irish potatoes", "Cooking bananas, plantains", "Other starches"))
+#                              +300*(skcode %in% c("Onions, tomatoes, carrots and green pepper, other viungo", 
+#                                                  "Spinach, cabbage and other green vegetables", 
+#                                                  "Canned, dried and wild vegetables"))
+#                              +400*(skcode %in% c("Peas, beans, lentils and other pulses", 
+#                                                  "Groundnuts in shell/shelled", 
+#                                                  "Coconuts (mature/immature)",
+#                                                  "Cashew, almonds and other nuts",
+#                                                  "Seeds and products from nuts/seeds (excl. cooking oil)"))
+#                              +500*(skcode %in% c("Ripe bananas", 
+#                                                  "Citrus fruits (oranges, lemon, tangarines, etc.)", 
+#                                                  "Mangoes, avocadoes and other fruits"))
+#                              +600*(skcode %in% c("Beef including minced sausage", 
+#                                                  "Pork including sauages and bacon", 
+#                                                  "Chicken and other poultry",
+#                                                  "Wild birds and insects",
+#                                                  "Goat meat",
+#                                                  "Other domestic/wild meat products"))
+#                              +700*(skcode %in% c("Eggs")) 
+#                              +800*(skcode %in% c("Fresh fish and seafood (including dagaa)", 
+#                                                  "Dried/salted/canned fish and seafood (incl. dagaa)", 
+#                                                  "Package fish"))
+#                              +900*(skcode %in% c("Fresh milk", 
+#                                                  "Milk products (like cream, cheese, yoghurt etc)", 
+#                                                  "Canned milk/milk powder"))
+#                              +1000*(skcode %in% c("Cooking oil", 
+#                                                  "Butter, margarine, ghee and other fat products"))
+#                              +1100*(skcode %in% c("Sugar", 
+#                                                  "Sugarcane", 
+#                                                  "Sweets",
+#                                                  "Honey, syrups, jams, marmalade, jellies, canned fruits"))
+#                              +1200*(skcode %in% c("Other spices", 
+#                                                  "Tea dry", 
+#                                                  "Coffee and cocoa",
+#                                                  "Other raw materals for drinks",
+#                                                  "Bottled/canned soft drinks (soda, juice, water)",
+#                                                  "Prepared tea/coffee",
+#                                                  "Salt")) )
+
+## Only usable when skcodes are avialable: unavailable in R.3.3.1
+#FOOD2008C <- 
+#  mutate(FOOD2008, foodgroup = 
+#            100*(skcode >= 101  & skcode <= 112)
+#            100*(skcode %in% c(101,102,103,104,105,106,107,108,109,110,111,112))
+#           +200*(skcode %in% c(201,202,203,204,205,206,207))
+#           +300*(skcode %in% c(601,602,603))
+#           +400*(skcode %in% c(401,501,502,503,504))
+#           +500*(skcode %in% c(701,702,703))
+#           +600*(skcode %in% c(801,802,803,804,805,806))
+#           +700*(skcode %in% c(807))
+#           +800*(skcode %in% c(808,809,810))
+#           +900*(skcode %in% c(901,902,903))
+#           +1000*(skcode %in% c(1001,1002))
+#           +1100*(skcode %in% c(301,302,303,704))
+#           +1200*(skcode %in% c(1003,1004,1101,1102,1103,1104,1105,1106,1107,1108)))
+
+#summary(FOOD2008C$foodgroup)
+
+# 2-13       100       cereals = mean(cereals, na.rm = TRUE),
+# 14-20      200       rootsandtubers = mean(rootsandtubers, na.rm = TRUE),
+# 21-23      300       vegetables = mean(vegetables, na.rm=TRUE),
+# 24         400       pulsesandnuts = mean(pulsesandnuts, na.rm=TRUE),
+# 25-28      500       fruits = mean(fruits, na.rm=TRUE),
+# 29-31      600       meat = mean(meat, na.rm=TRUE),
+# 32-35      700       eggs = mean(eggs, na.rm=TRUE),
+# 36-38      800       fishandseafood= mean(fishandseafood, na.rm=TRUE),
+# 39-48      900       milkandmilkproducts= mean(milkandmilkproducts, na.rm=TRUE),
+# 48-50     1000       oilsandfats=mean(oilsandfats, na.rm=TRUE),
+# 50-53     1100       sugar=mean(sugar, na.rm=TRUE),
+# 53-60     1200       condiments=mean(condiments, na.rm=TRUE))
+
+#DDS2008C$foodgroup <- factor(DDS2008C$foodgroup,
+# levels = c(100,200,300,400,500,600,700,800,900,1000,1100),
+# labels = c("cereals", "rootsandtubers", "vegetables", "pulsesandnuts", "fruits", "meat", "eggs", "fishandseafood", "oilsandfats", "sugar", "condiments")) 
+
+# DON'T USE
+#DDS2008D <- mutate(DDS2008C, foodgroup2 = cut(foodgroup, c(50, 150, 250, 350, 450, 550, 650, 750, 850, 950, 1050), right=FALSE) )
+
+#DON'T USE
+#DDS2008E <-
+#  mutate(DDS2008C, count = ifelse(skq1 == 1, 1, ifelse(NA))) %>%
+#  group_by(hhid) %>%
+#  spread(foodgroup, count) %>%
+#  select(-skq1) %>%
+#  filter (! duplicated(hhid)) %>%
+#  replace(is.na(.), 0)
+#summary(DDS2008E$cereals)
+
+#DDS2008$FVS <- rowSums(FVS2008[2:60])
