@@ -9,11 +9,9 @@
 if(Sys.info()["user"] == "Tomas"){
   dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2010/Data"
 } else {
-  dataPath <- "N:/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2010/Data"
+  dataPath <- "D:/Analyses/CIMMYT/NutritionTZA/SurveyData/2010/Data"
 }
-
-dataPath <- "D:/Models/CIMMYT/SurveyData/TZA/2010/Data"
-#D:\Models\CIMMYT\SurveyData\TZA\2010\Data\TZNPS2HH2DTA
+setwd("D:/Analyses/CIMMYT/NutritionTZA")
 
 # load packages
 library("haven")
@@ -24,7 +22,9 @@ library("markdown")
 
 options(scipen=999)
 
-setwd("D:/Models/CIMMYT/TZA")
+# ***************************************************************************************************
+#Creation of DDS and FVS
+# ***************************************************************************************************
 
 FOOD2010 <- read_dta(file.path(dataPath, "/TZNPS2HH3DTA/HH_SEC_K1.dta"))
 FOOD2010 <- subset(FOOD2010, select=c(y2_hhid, itemcode, hh_k01_2))
@@ -145,7 +145,9 @@ rm(by_hhidsub, myvars)
 plot(by_hhid$DDS, by_hhid$FVS, main="Coherence between DDS and FVS in 2010", 
      xlab="DDS ", ylab="FVS ", pch=19) 
 
+# ***************************************************************************************************
 #Construction of FCS
+# ***************************************************************************************************
 
 #HH_SEC_K2_2010 <- read.dta("D:/UserData/verbe038/data tza/2010/Data/HH_SEC_K2.dta")
 HH_SEC_K2_2010 <- read_dta(file.path(dataPath, "/TZNPS2HH2DTA/HH_SEC_K2.dta"))
@@ -180,5 +182,44 @@ FCS2010$FCSu <-
   FCS2010$meat_fish + 
   FCS2010$sugar + 
   FCS2010$condiments
+
+RM(Food2010,NUTR2010)
+
+# ***************************************************************************************************
+#Construction of CSI
+# ***************************************************************************************************
+HH_SEC_I1_2010 <- read_dta(file.path(dataPath, "TZNPS2HH1DTA/HH_SEC_I1.dta"))
+*FOOD2010 <- read_dta(file.path(dataPath, "/TZNPS2HH3DTA/HH_SEC_K1.dta"))
+
+#D:\Analyses\CIMMYT\NutritionTZA\SurveyData\2010\Data\TZNPS2HH1DTA
+#D:\Analyses\CIMMYT\NutritionTZA\SurveyData\2010\Data\TZNPS2HH1DTA
+
+descriptive.table(vars = d(hh_i02_1, hh_i02_2, hh_i02_3, hh_i02_4, hh_i02_5, hh_i02_6, 
+                           hh_i02_7, hh_i02_8),data= HH_SEC_I1_2010, 
+                  func.names = c("Mean","St. Deviation", "Min", "Max", "Skew","Valid N"))
+
+CSI2010 <- 
+  subset(HH_SEC_I1_2010, select=c(y2_hhid, hh_i01, hh_i02_1, hh_i02_2, hh_i02_3, hh_i02_4, hh_i02_5, hh_i02_6, 
+                                   hh_i02_7, hh_i02_8)) %>% na.omit()
+
+CSI2010$CSI <- 
+  CSI2010$hh_i02_1*1 + 
+  CSI2010$hh_i02_2*1 + 
+  CSI2010$hh_i02_3*1 + 
+  CSI2010$hh_i02_4*1 + 
+  CSI2010$hh_i02_5*3 + 
+  CSI2010$hh_i02_6*2 + 
+  CSI2010$hh_i02_7*0 + 
+  CSI2010$hh_i02_8*4
+
+CSI2010<- select(CSI2010, y2_hhid, CSI)
+CSI2010<- mutate(CSI2010, surveyyear=2010) %>% rename(hhid2010=y2_hhid)
+
+descriptive.table(vars = d(hh_i02_1, hh_i02_2, hh_i02_3, hh_i02_4, hh_i02_5, hh_i02_6, 
+                           hh_i02_7, hh_i02_8, CSI),data= CSI2010, 
+                  func.names = c("Mean","St. Deviation", "Min", "Max", "Skew","Valid N"))
+
+saveRDS(CSI2010, "Data/CSI2010.rds")
+
 
 

@@ -9,8 +9,10 @@
 if(Sys.info()["user"] == "Tomas"){
   dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2008/Data"
 } else {
-  dataPath <- "N:/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2008/Data"
+  dataPath <- "D:/Analyses/CIMMYT/NutritionTZA/SurveyData/2008/Data"
 }
+
+setwd("D:/Analyses/CIMMYT/NutritionTZA")
 
 # load packages
 library("haven")
@@ -21,13 +23,12 @@ library("markdown")
 
 options(scipen=999)
 
-setwd("D:/Models/CIMMYT/TNZ")
-
+# ***************************************************************************************************
 #Creation of DDS and FVS
+# ***************************************************************************************************
 
 FOOD2008 <- read_dta(file.path(dataPath, "TZNPS1HHDTA_E/SEC_K1.dta"))
 FOOD2008 <- subset(FOOD2008, select=c(hhid, skcode, skq1))
-
 
 # How food items are connected to food groups, See FAO (2013) 
 # 2-13       100       cereals = mean(cereals, na.rm = TRUE),
@@ -139,3 +140,4 @@ rm(by_hhidsub, myvars)
 plot(by_hhid$DDS, by_hhid$FVS, main="Coherence between DDS and FVS in 2008", 
      xlab="DDS ", ylab="FVS ", pch=19) 
 
+rm(Food2008,NUTR2008)
