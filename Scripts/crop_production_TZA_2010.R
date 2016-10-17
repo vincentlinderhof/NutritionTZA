@@ -47,7 +47,7 @@ if(Sys.info()["user"] == "Tomas"){
 
 # read in data and select key variables
 crop_prod <- read_dta(file.path(dataPath, "TZNPS2AGRDTA/AG_SEC4A.dta")) %>%
-  select(y2_y2_hhid, plotnum, crop_code=zaocode, harv_area=ag4a_08,
+  select(y2_hhid, plotnum, crop_code=zaocode, harv_area=ag4a_08,
          crop_qty_harv=ag4a_15)
 
 # use crop_code as an integer. 
@@ -64,7 +64,7 @@ crop_prod$harv_area <- crop_prod$harv_area*0.404686
 # --------------------------------------
 
 land <- read_dta(file.path(dataPath, "areas_tza_y2_imputed.dta")) %>%  
-  select(y2_y2_hhid=case_id, plotnum, area_farmer=area_sr, area_gps=area_gps_mi_50)
+  select(y2_hhid=case_id, plotnum, area_farmer=area_sr, area_gps=area_gps_mi_50)
 
 # 0 area does not ake any sense
 land$area_gps <- ifelse(land$area_gps %in% 0, NA, land$area_gps)
@@ -186,4 +186,5 @@ names(crop_prod_area_rel) <- paste0(names(crop_prod_area_rel), "_area_rel")
 names(crop_prod_area_rel)[1] <- "y2_hhid"
 
 rm(crop_prod_v, crop_prod_w, crop_prod_x,
-   crop_prod_y, crop_prod_z)
+   crop_prod_y, crop_prod_z, CCP, CTR, fruit,
+   leg, other, veg, CCNP)

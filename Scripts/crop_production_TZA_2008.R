@@ -185,4 +185,5 @@ names(crop_prod_area_rel) <- paste0(names(crop_prod_area_rel), "_area_rel")
 names(crop_prod_area_rel)[1] <- "hhid"
 
 rm(crop_prod_v, crop_prod_w, crop_prod_x,
-   crop_prod_y, crop_prod_z)
+   crop_prod_y, crop_prod_z, CCP, CTR, fruit,
+   leg, other, veg, CCNP)
