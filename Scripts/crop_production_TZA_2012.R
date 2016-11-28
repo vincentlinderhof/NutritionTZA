@@ -189,7 +189,5 @@ saveRDS(crop_prod_area_gps,    "Data/Crop_prod_area_gps_2012.rds")
 saveRDS(crop_prod_area_rel,    "Data/Crop_prod_area_rel_2012.rds")
 saveRDS(crop_prod_area_mix,    "Data/Crop_prod_area_mix_2012.rds")
 
-
-
 rm(crop_prod_v, crop_prod_w, crop_prod_x,
    crop_prod_y, crop_prod_z)

@@ -17,6 +17,8 @@ if(Sys.info()["user"] == "linde069"){
 # How many maize growers are there in the LSMS-ISA surveys 2009/2010, 2010/2011 and 2011/2012?
 # How many households are there in the panel survey?
 # How many households in the (panel) survey do grow maize and grow maize continuously?
+# Note that alle waves have different identifiers!
+# Moreover, when a household member is head in one year, he might have been no head in the other years.
 #
 # -------------------------------------
 
@@ -57,7 +59,7 @@ key$head2008 <- ifelse(key$indidy1==1,1,0)
 key$head2008 <- ifelse(is.na(key$indidy1),0,key$head2008)
 
 key$head2010 <- 0
-key$head2010 <- ifelse(key$indidy2==1,1,0)
+key$head2010 <- ifelse(key$indidy2==1,1,0) 
 key$head2010 <- ifelse(is.na(key$indidy2),0,key$head2010)
 
 key$head2012 <- 0
@@ -165,6 +167,8 @@ descriptive.table(vars = d(CCNP_area_12, CCP_area_12, CTR_area_12,
 
 Crop_prod_area_2012 <- Crop_prod_area_2012[ c("hhid2012","D_maize_2012")]
 Crop_prod_area_2012$D_maize_2012 <- ifelse(is.na(Crop_prod_area_2012$D_maize_2012),0,Crop_prod_area_2012$D_maize_2012) 
+descriptive.table(vars = d(D_maize_2012), data= Crop_prod_area_2012, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
 
 HHpanel2 <- dplyr::left_join(HHpanel2, Crop_prod_area_2012, by="hhid2012")
 
@@ -179,8 +183,11 @@ HHpanel2$D_maize_2012 <- Crop_prod_area_2012$D_maize_2012*(HHpanel2$D_maize_2012
 HH2008 <- left_join(Location2008, Crop_prod_area_2008)
 detach("package:dplyr", unload=TRUE)
 library(dplyr)
-HH2010 <- left_join(Location2010, Crop_prod_area_2010)
-HH2012 <- left_join(Location2012, Crop_prod_area_2012)
+### HELP: Both commands seem to work perfectly, no error warnings. All variables are created, the right hhid is used,
+### but the contents of the "Crop_prod_area" parts is empty for 2010 and 2012.
+### Tom, did you ever had problems like this with the left_join command? Any ideas for a solution?
+HH2010 <- dplyr::left_join(Location2010, Crop_prod_area_2010, all=TRUE)
+HH2012 <- dplyr::left_join(Location2012, Crop_prod_area_2012, all=TRUE)
 
 
 # Construct cross section of all households included in one of the three LSMS surveys in TZA
@@ -203,6 +210,8 @@ Deducer::frequencies(HHpanel2$rural12)
 HHpanel2$respin_code <- HHpanel2$respin09 *1 + HHpanel2$respin10 *10 +HHpanel2$respin11 *100
 Deducer::frequencies(HHpanel2$respin_code)
 
+
+## THE SCRIPTS BELOW ARE NOT ADJUSTED FOR TANZANIA YET!!! Do not run!
 # Construct a participation in the panel (rural=2, urban=1, and no participation=0)
 HHpanel2$rural09 <- HHpanel2$rural09+1
 HHpanel2$rural10 <- HHpanel2$rural10+1
