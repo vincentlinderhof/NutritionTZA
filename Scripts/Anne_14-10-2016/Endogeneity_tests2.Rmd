@@ -1,0 +1,188 @@
+---
+title: "Endogeneity tests2"
+author: "Anne"
+date: "25 september 2016"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+knitr::opts_chunk$set(echo = TRUE)
+library(AER)
+library(systemfit)
+library(ivpack)
+library(stargazer)
+library(woe)
+library(dplyr)
+
+dataPath <- "C:/Users/afver/OneDrive/Documenten/Removable Disk/verbe038/TZA"
+all_maize <-readRDS(file.path(dataPath, "all_maize"))
+Data2010_2012maize <-readRDS(file.path(dataPath, "Data2010_2012maize"))
+Data2010_2012maize <- unique(Data2010_2012maize)
+Data2010_2012maize <- select(Data2010_2012maize, hhid2008, hhid2010, hhid2012, surveyyear, status, hybrd1, fert1 , fem_head , ed_any , years, hhsize , dependency ,
+                             income, off_farm_income_hh, area_tot  , asset , hqi ,
+                             TLU , SACCO , ZONE, central, eastern, lake, northern, southern, southern_highlands, western, zanzibar, 
+                             avgpPrecip , avgTemp , dist2town , dist2market, DDS, FVS, FCS, CSI, subseed1, subfert1, dishybrd1, disfert1, m)
+Data2010_2012maize <- unique(Data2010_2012maize)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+##Dietary diversity score
+First stage: Hybrid seed use
+
+```{r  }
+#First Stage
+DDS1 <- lm(hybrd1 ~ subseed1 + dishybrd1+ subfert1 + disfert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear), data=Data2010_2012maize)
+
+
+summary(DDS1)
+
+```
+
+Dietary diversity score
+First stage: fertiliser use
+
+```{r}
+DDS2 <- lm(fert1 ~ subseed1 + dishybrd1+ subfert1 + disfert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear), data=Data2010_2012maize)
+summary(DDS2)
+```
+Dietary diversity score
+Second stage
+```{r}
+# Second Stage
+DDSi <- ivreg(DDS ~ hybrd1 + fert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear)|
+                fem_head + ed_any+ hhsize + dependency +  log(income+1)++ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+hqi +
+                SACCO + factor(ZONE) + avgpPrecip
+              + avgTemp + dist2town + dist2market+factor(surveyyear) +subseed1 + dishybrd1+ subfert1 + disfert1, data=Data2010_2012maize)
+
+summary(DDSi, diagnostics=TRUE)
+```
+
+Food Variety Score
+First stage: Hybrid seed use
+
+```{r  }
+#First Stage
+FVS1 <- lm(hybrd1 ~ subseed1 + dishybrd1+ subfert1 + disfert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear), data=Data2010_2012maize)
+
+
+summary(FVS1)
+
+```
+
+Food Variety Score
+First stage: fertiliser use
+
+```{r}
+FVS2 <- lm(fert1 ~ subseed1 + dishybrd1+ subfert1 + disfert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear), data=Data2010_2012maize)
+summary(FVS2)
+```
+Food variety score
+Second stage
+```{r}
+# Second Stage
+FVSi <- ivreg(FVS ~ hybrd1 + fert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear)|
+                fem_head + ed_any+ hhsize + dependency +  log(income+1)++ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+hqi +
+                SACCO + factor(ZONE) + avgpPrecip
+              + avgTemp + dist2town + dist2market+factor(surveyyear) +subseed1 + dishybrd1+ subfert1 + disfert1, data=Data2010_2012maize)
+
+summary(FVSi, diagnostics=TRUE)
+```
+
+
+##Food consumption score
+First stage: Hybrid seed use
+
+```{r  }
+#First Stage
+FCS1 <- lm(hybrd1 ~ subseed1 + dishybrd1+ subfert1 + disfert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear), data=Data2010_2012maize)
+
+
+summary(FCS1)
+
+```
+
+Food consumption score
+First stage: fertiliser use
+
+```{r}
+FCS2 <- lm(fert1 ~ subseed1 + dishybrd1+ subfert1 + disfert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear), data=Data2010_2012maize)
+summary(FCS2)
+```
+Food consumption score
+Second stage
+```{r}
+# Second Stage
+FCSi <- ivreg(FCS ~ hybrd1 + fert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear)|
+                fem_head + ed_any+ hhsize + dependency +  log(income+1)++ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+hqi +
+                SACCO + factor(ZONE) + avgpPrecip
+              + avgTemp + dist2town + dist2market+factor(surveyyear) +subseed1 + dishybrd1+ subfert1 + disfert1, data=Data2010_2012maize)
+
+summary(FCSi, diagnostics=TRUE)
+```
+
+##Coping strategy index
+First stage: Hybrid seed use
+
+```{r}
+#First Stage
+CSI1 <- lm(hybrd1 ~ subseed1 + dishybrd1+ subfert1 + disfert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear), data=Data2010_2012maize)
+
+
+summary(CSI1)
+
+```
+
+Coping strategy index
+First stage: fertiliser use
+
+```{r}
+CSI2 <- lm(fert1 ~ subseed1 + dishybrd1+ subfert1 + disfert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear), data=Data2010_2012maize)
+summary(CSI2)
+```
+Coping strategy index
+Second stage
+```{r}
+# Second Stage
+CSIi <- ivreg(CSI ~ hybrd1 + fert1 + fem_head + ed_any+ hhsize + dependency + log(income+1)+ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+ hqi +
+                SACCO + factor(ZONE) + avgpPrecip + avgTemp + dist2town + dist2market+factor(surveyyear)|
+                fem_head + ed_any+ hhsize + dependency +   log(income+1)++ log(off_farm_income_hh+1)++ log(off_farm_income_hh+1) +
+                log(area_tot)  + log(asset) + log(TLU+1)+hqi +
+                SACCO + factor(ZONE) + avgpPrecip
+              + avgTemp + dist2town + dist2market+factor(surveyyear) +subseed1 + dishybrd1+ subfert1 + disfert1, data=Data2010_2012maize)
+
+summary(CSIi, diagnostics=TRUE)
+```
+

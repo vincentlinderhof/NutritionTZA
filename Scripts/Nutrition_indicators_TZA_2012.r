@@ -6,44 +6,40 @@
 
 # Vincent at home
 
-if(Sys.info()["user"] == "Tomas"){
-  dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2012/Data"
-} else {
-  dataPath <- "D:/Analyses/CIMMYT/NutritionTZA/SurveyData/2012/Data"
-}
-setwd("D:/Analyses/CIMMYT/NutritionTZA")
+#if(Sys.info()["user"] == "Tomas"){
+#  dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2012/Data"
+#} else {
+#  dataPath <- "D:/Analyses/CIMMYT/NutritionTZA/SurveyData/2012/Data"
+#}
+#setwd("D:/Analyses/CIMMYT/NutritionTZA")
 
 # load packages
-library("haven")
-library("stringr")
-library("reshape2")
-library("dplyr", lib.loc="C:/Program Files/R/R-3.3.1/library")
-library("markdown")
+#library("haven")
+#library("stringr")
+#library("reshape2")
+#library("dplyr", lib.loc="C:/Program Files/R/R-3.3.1/library")
+#library("markdown")#
 
-options(scipen=999)
+#options(scipen=999)
 
 # ***************************************************************************************************
 #Creation of DDS and FVS
 # ***************************************************************************************************
 
-FOOD2012 <- read_dta(file.path(dataPath, "HH_SEC_J1.dta"))
-FOOD2012 <- subset(FOOD2012, select=c(y3_hhid, itemcode, hh_j01))
+FOOD2012 <- read_dta(file.path(dataPath, "HH_SEC_J1.dta")) %>% 
+  dplyr::select(hhid=y3_hhid, itemcode, hh_j01)
+#FOOD2012 <- subset(FOOD2012, select=c())
 
 library(tidyr) # Necessary for spread function in mutate command
 # Construct dummy variables for food items
 NUTR2012 <-
   mutate(FOOD2012, count = ifelse(hh_j01 == 1, 1, ifelse(NA))) %>%
-  group_by(y3_hhid) %>%
+  group_by(hhid) %>%
   spread(itemcode, count) %>%
-  select(-hh_j01 ) %>%
-  filter (! duplicated(y3_hhid)) %>%
+  filter (! duplicated(hhid)) %>%
   replace(is.na(.), 0)
 
-NUTR2012 <- subset(NUTR2012, select= -c(hh_j01))
-
-#dataPath <- "D:/UserData/verbe038/data tza/2012/Data/"
-#dataPath 
-
+NUTR2012 <- NUTR2012[ -c(2) ]
 
 # Columns correspond to list of food items!
 NUTR2012$cereals             <- 1*(rowSums(NUTR2012[2:13]) > 0)
@@ -90,8 +86,8 @@ NUTR2012 <- mutate(NUTR2012,
 NUTR2012$FVS <- rowSums(NUTR2012[2:60])
 #rm(FOOD2008, NUTR2008)
 
-by_hhid2012 <- group_by(NUTR2012, NUTR2012$y3_hhid)
-by_hhid2012 <- by_hhid2012[ -c(2:59) ]
+by_hhid2012 <- dplyr::group_by(NUTR2012, hhid)
+by_hhid2012 <- by_hhid2012[ -c(2:60) ]
 
 saveRDS(by_hhid2012, file="Data/Nutrition indicators TZA 2012.Rda")
 
@@ -110,27 +106,23 @@ by_hhidsub <- by_hhid2012[myvars]
 cor(by_hhidsub, use="all.obs", method="pearson")
 rm(by_hhidsub, myvars)
 
-
 # Simple Scatterplot
 plot(by_hhid2012$DDS, by_hhid2012$FVS, main="Coherence between DDS and FVS in 2012", 
      xlab="DDS ", ylab="FVS ", pch=19) 
+
+FNS2012 <- by_hhid2012
+rm(FOOD2012, NUTR2012, by_hhid2012)
+
 
 # ***************************************************************************************************
 #Construction of FCS
 # ***************************************************************************************************
 
-HH_SEC_J3_2012 <- read_dta(file.path(dataPath, "HH_SEC_J3.dta"))
-FCS2012 <- subset(HH_SEC_J3_2012, select=c(y3_hhid, itemcode, hh_j09_3))
+FCS2012 <- read_dta(file.path(dataPath, "HH_SEC_J3.dta")) %>%
+              dplyr::select(hhid=y3_hhid, itemcode, hh_j09_3)
 
-FCS2012 <- group_by(HH_SEC_J3_2012, y3_hhid) %>% 
-  na.omit() %>%
-  #  select(y2_hhid, itemcode, hh_k08_3) %>%
-  spread(itemcode, hh_j09_3) %>% 
-rename(cereals=1, rootsandtubers=2, pulsesandnuts=3, vegetables=4, meatandfish=5, fruits=6, milkproducts=7, fatsandoils=8, sugar=9, condiments=10)
-  #  mutate(AB = A+B) %>%
-  #  select(-A, -B) %>%
-  #  mutate(AB=replace(AB, AB>=7, 7)) %>%
-#  rename(main_staples=A, less_staples=B, pulses_nuts=C, vegetables=D, meat_fish=E, fruits=F, milk=G, oil=H, sugar=I, condiments=J)
+table(FCS2012$itemcode, FCS2012$hh_j09_3)
+Deducer::frequencies(FCS2012$hh_j09_3)
 
 FCS2012$cereals        <- 1*(FCS2012$itemcode == 1)*FCS2012$hh_j09_3
 FCS2012$rootsandtubers <- 1*(FCS2012$itemcode == 2)*FCS2012$hh_j09_3
@@ -160,7 +152,17 @@ FCS2012$condiments     <- 1*(FCS2012$itemcode == 10)*FCS2012$hh_j09_3
 # remove hh_j09_3 and itemcode because these variables cannot be aggregated
 FCS2012 <- FCS2012[ -c(2, 3) ]
 
-FCS2012 <- aggregate(FCS2012, by=list(FCS2012$y3_hhid), FUN=max )
+FCS2012 <- group_by(FCS2012, hhid) %>%
+  summarize(cereals        = sum(cereals),
+            rootsandtubers = sum(rootsandtubers),
+            pulsesandnuts  = sum(pulsesandnuts),
+            vegetables     = sum(vegetables),
+            meatandfish    = sum(meatandfish),
+            fruits         = sum(fruits),
+            milkproducts   = sum(milkproducts),
+            fatsandoils    = sum(fatsandoils),
+            sugar          = sum(sugar),
+            condiments     = sum(condiments))
 
 FCS2012$FCSw <- 
   FCS2012$cereals*2 + 
@@ -190,6 +192,7 @@ descriptive.table(vars = d(cereals, rootsandtubers, vegetables, pulsesandnuts, f
                            milkproducts, fatsandoils, sugar,condiments, FCSw, FCSu),data= FCS2012, 
                   func.names = c("Mean","St. Deviation", "Min", "Max", "Skew","Valid N"))
 
+
 # Histograms of nutrition indicators
 hist(FCS2012$FCSw, freq = FALSE, ylim = c(0, 0.02), xlab="FCSw", ylab="%", main="Frequency of FCS (weighted) in 2012")
 
@@ -200,13 +203,17 @@ FCS2012sub <- FCS2012[myvars]
 cor(FCS2012sub, use="all.obs", method="pearson")
 rm(FCS2012sub, myvars)
 
+FNS2012 <- left_join(FNS2012, FCS2012)
+rm(FCS2012)
 
 # ***************************************************************************************************
 #Construction of CSI
 # ***************************************************************************************************
+FCS2012 <- read_dta(file.path(dataPath, "HH_SEC_J3.dta")) %>%
+  dplyr::select(hhid=y3_hhid, itemcode, hh_j09_3)
 
-HH_SEC_H_2012<- read_dta(file.path(dataPath, "HH_SEC_H.dta"))
-CSI2012 <- subset(HH_SEC_H_2012, select=c(y3_hhid, hh_h01, hh_h02_1, hh_h02_2, hh_h02_3, hh_h02_4, hh_h02_5, hh_h02_6, hh_h02_7, hh_h02_8))
+CSI2012<- read_dta(file.path(dataPath, "HH_SEC_H.dta")) %>%
+dplyr::select(hhid=y3_hhid, hh_h01, hh_h02_1, hh_h02_2, hh_h02_3, hh_h02_4, hh_h02_5, hh_h02_6, hh_h02_7, hh_h02_8)
 
 descriptive.table(vars = d(hh_h02_1, hh_h02_2, hh_h02_3, hh_h02_4, hh_h02_5, hh_h02_6, 
                            hh_h02_7, hh_h02_8),data= HH_SEC_H_2012, 
@@ -226,8 +233,10 @@ descriptive.table(vars = d(hh_h02_1, hh_h02_2, hh_h02_3, hh_h02_4, hh_h02_5, hh_
                            hh_h02_7, hh_h02_8, CSI),data= CSI2012, 
                   func.names = c("Mean","St. Deviation", "Min", "Max", "Skew","Valid N"))
 
-CSI2012<- select(CSI2012, y3_hhid, CSI)
-CSI2012<- mutate(CSI2012, surveyyear=2012) %>% rename(hhid2012=y3_hhid)
+CSI2012<- subset(CSI2012, select = c(hhid, CSI))
+FNS2012 <- left_join(FNS2012, CSI2012)
+rm(CSI2012)
+#CSI2012<- mutate(CSI2012, surveyyear=2012) %>% rename(hhid2012=y3_hhid)
 
   
   

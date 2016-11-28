@@ -1,3 +1,6 @@
+# -------------------------------------------------------
+# --- THIS FILES IS SOURCED IN TZA_2010.r ---------------
+# -------------------------------------------------------
 # -------------------------------------
 #' crop production variables:
 #'  Tanzania 2010
@@ -35,11 +38,11 @@ library(tidyr)
 library(dplyr)
 library(haven)
 
-if(Sys.info()["user"] == "Tomas"){
-  dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2010/Data"
-} else {
-  dataPath <- "N:/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2010/Data"
-}
+#if(Sys.info()["user"] == "Tomas"){
+#  dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2010/Data"
+#} else {
+#  dataPath <- "N:/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2010/Data"
+#}
 
 # -------------------------------------
 # read in crop information - crop level
@@ -47,7 +50,7 @@ if(Sys.info()["user"] == "Tomas"){
 
 # read in data and select key variables
 crop_prod <- read_dta(file.path(dataPath, "TZNPS2AGRDTA/AG_SEC4A.dta")) %>%
-  select(y2_y2_hhid, plotnum, crop_code=zaocode, harv_area=ag4a_08,
+  select(hhid=y2_hhid, plotnum, crop_code=zaocode, harv_area=ag4a_08,
          crop_qty_harv=ag4a_15)
 
 # use crop_code as an integer. 
@@ -64,7 +67,7 @@ crop_prod$harv_area <- crop_prod$harv_area*0.404686
 # --------------------------------------
 
 land <- read_dta(file.path(dataPath, "areas_tza_y2_imputed.dta")) %>%  
-  select(y2_y2_hhid=case_id, plotnum, area_farmer=area_sr, area_gps=area_gps_mi_50)
+  select(hhid=case_id, plotnum, area_farmer=area_sr, area_gps=area_gps_mi_50)
 
 # 0 area does not ake any sense
 land$area_gps <- ifelse(land$area_gps %in% 0, NA, land$area_gps)
@@ -118,11 +121,13 @@ crop_prod$area_rel <- crop_prod$harv_area/crop_prod$area_farmer*crop_prod$area_m
 
 fruit <- c(70:74, 76:85, 97:99, 67, 38, 39)
 CCP <- c(53:61, 63:66, 18, 34, 21, 75, 44:46) 
-CTR <- c(11:17, 22:27) 
+CTR <- c(12:15, 17, 22:27) 
 CCNP <- c(50, 51, 53, 62, 19) 
 veg <- c(86:96, 100, 101)
 leg <- c(31, 32, 33, 35, 36, 37, 41, 42, 43, 47, 48)
-other <- c(fruit, CCP, CTR, CCNP, veg, leg)
+maize <- c(11)
+wheat <- c(16)
+other <- c(fruit, CCP, CTR, CCNP, veg, leg, maize, wheat)
 
 # get a variable with the crop group
 crop_prod$type <- character(nrow(crop_prod))
@@ -133,8 +138,8 @@ crop_prod <- mutate(crop_prod,
                     type=ifelse(crop_code %in% CCNP, "CCNP", type),
                     type=ifelse(crop_code %in% veg, "veg", type),
                     type=ifelse(crop_code %in% leg, "leg", type),
-                    type=ifelse(crop_code %in% 11, "maize", type), # maize has crop code 11
-                    type=ifelse(crop_code %in% 16, "wheat", type),
+                    type=ifelse(crop_code %in% maize, "maize", type), # maize has crop code 11
+                    type=ifelse(crop_code %in% wheat, "wheat", type),
                     type=ifelse(!crop_code %in% other, "other", type)) # wheat has crop code 16
 
 # -------------------------------------
@@ -151,39 +156,46 @@ crop_prod <- mutate(crop_prod,
 # -------------------------------------
 
 # 1. harvested area (farmer reported)
-crop_prod_v <- select(crop_prod, y2_hhid, type, harv_area)
-crop_prod_harv_area <- group_by(crop_prod_v, y2_hhid, type) %>%
+crop_prod_v <- select(crop_prod, hhid, type, harv_area)
+crop_prod_harv_area <- group_by(crop_prod_v, hhid, type) %>%
   summarise_each(funs(sum)) %>% spread(key = type, value = harv_area) 
 names(crop_prod_harv_area) <- paste0(names(crop_prod_harv_area), "_harv_area")
-names(crop_prod_harv_area)[1] <- "y2_hhid"
+names(crop_prod_harv_area)[1] <- "hhid"
 
 # 2. plot area (farmer reported) 
-crop_prod_w <- select(crop_prod, y2_hhid, type, area_farmer)
-crop_prod_area_farmer <- group_by(crop_prod_w, y2_hhid, type) %>%
+crop_prod_w <- select(crop_prod, hhid, type, area_farmer)
+crop_prod_area_farmer <- group_by(crop_prod_w, hhid, type) %>%
   summarise_each(funs(sum)) %>% spread(key = type, value = area_farmer) 
 names(crop_prod_area_farmer) <- paste0(names(crop_prod_area_farmer), "_area_farmer")
-names(crop_prod_area_farmer)[1] <- "y2_hhid"
+names(crop_prod_area_farmer)[1] <- "hhid"
 
 # 3. plot area (gps reported, 25% of plots)
-crop_prod_x <- select(crop_prod, y2_hhid, type, area_gps)
-crop_prod_area_gps <- group_by(crop_prod_x, y2_hhid, type) %>%
+crop_prod_x <- select(crop_prod, hhid, type, area_gps)
+crop_prod_area_gps <- group_by(crop_prod_x, hhid, type) %>%
   summarise_each(funs(sum)) %>% spread(key = type, value = area_gps) 
 names(crop_prod_area_gps) <- paste0(names(crop_prod_area_gps), "_area_gps")
-names(crop_prod_area_gps)[1] <- "y2_hhid"
+names(crop_prod_area_gps)[1] <- "hhid"
 
 # 4. plot area (farmer + gps measured)
-crop_prod_y <- select(crop_prod, y2_hhid, type, area_mix)
-crop_prod_area_mix <- group_by(crop_prod_y, y2_hhid, type) %>%
+crop_prod_y <- select(crop_prod, hhid, type, area_mix)
+crop_prod_area_mix <- group_by(crop_prod_y, hhid, type) %>%
   summarise_each(funs(sum)) %>% spread(key = type, value = area_mix) 
 names(crop_prod_area_mix) <- paste0(names(crop_prod_area_mix), "_area_mix")
-names(crop_prod_area_mix)[1] <- "y2_hhid"
+names(crop_prod_area_mix)[1] <- "hhid"
 
 # 5. relative area 
-crop_prod_z <- select(crop_prod, y2_hhid, type, area_rel)
-crop_prod_area_rel <- group_by(crop_prod_z, y2_hhid, type) %>%
+crop_prod_z <- select(crop_prod, hhid, type, area_rel)
+crop_prod_area_rel <- group_by(crop_prod_z, hhid, type) %>%
   summarise_each(funs(sum)) %>% spread(key = type, value = area_rel) 
 names(crop_prod_area_rel) <- paste0(names(crop_prod_area_rel), "_area_rel")
-names(crop_prod_area_rel)[1] <- "y2_hhid"
+names(crop_prod_area_rel)[1] <- "hhid"
+
+saveRDS(crop_prod_harv_area,   "Data/Crop_prod_harv_area_2010.rds")
+saveRDS(crop_prod_area_farmer, "Data/Crop_prod_area_farmer_2010.rds")
+saveRDS(crop_prod_area_gps,    "Data/Crop_prod_area_gps_2010.rds")
+saveRDS(crop_prod_area_rel,    "Data/Crop_prod_area_rel_2010.rds")
+saveRDS(crop_prod_area_mix,    "Data/Crop_prod_area_mix_2010.rds")
+
 
 rm(crop_prod_v, crop_prod_w, crop_prod_x,
    crop_prod_y, crop_prod_z)

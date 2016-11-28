@@ -1,3 +1,6 @@
+# -------------------------------------------------------
+# --- THIS FILES IS SOURCED IN TZA_2008.r ---------------
+# -------------------------------------------------------
 # -------------------------------------
 # on and off farm income for Tanzania
 # wave 1 (2008)
@@ -14,13 +17,17 @@
 # -------------------------------------
 
 library(dplyr)
+#install.packages("sjmisc")
 library(sjmisc)
 library(haven)
+detach("package:dplyr", character.only = TRUE)
+library("dplyr", character.only = TRUE)
 
 if(Sys.info()["user"] == "Tomas"){
   dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2008/Data"
 } else {
-  dataPath <- "N:/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2008/Data"
+#  dataPath <- "N:/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2008/Data"
+  dataPath <- "D:/Analyses/CIMMYT/TZA_Anne/SurveyData/2008/Data"
 }
 
 #######################################
@@ -165,5 +172,7 @@ income_2008$income <- with(income_2008,
 # remove all the other data
 rm(on_farm_income_lvstock,
    on_farm_income_rent, on_farm_income_perm,
-   on_farm_income_fruit, on_farm_income_crop,
-   dataPath)
+   on_farm_income_fruit, on_farm_income_crop)
+
+income_2008$hhid2008 <- income_2008$hhid 
+

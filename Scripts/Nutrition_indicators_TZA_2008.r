@@ -9,7 +9,7 @@
 if(Sys.info()["user"] == "Tomas"){
   dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2008/Data"
 } else {
-  dataPath <- "D:/Analyses/CIMMYT/TZA_Anne/SurveyData/2008/Data"
+  dataPath <- "D:/Analyses/CIMMYT/NutritionTZA/SurveyData/2008/Data"
 }
 
 setwd("D:/Analyses/CIMMYT/NutritionTZA")
@@ -150,13 +150,7 @@ rm(by_hhidsub, myvars)
 plot(by_hhid$DDS, by_hhid$FVS, main="Coherence between DDS and FVS in 2008", 
      xlab="DDS ", ylab="FVS ", pch=19) 
 
-rm(NUTR2008)
-
 ## Add it to the database
 # Household level
 FNS2008 <- subset(by_hhid, select=c(hhid,DDS,FVS))
-
-TZA2008HH <- left_join(TZA2008HH, FNS2008)
-rm(FNS2008)
-
-
+rm(FOOD2008, NUTR2008, by_hhid)

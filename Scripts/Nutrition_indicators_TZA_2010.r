@@ -1,3 +1,6 @@
+# -------------------------------------------------------
+# --- THIS FILES IS SOURCED IN TZA_2010.r ---------------
+# -------------------------------------------------------
 # Tom
 # dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2010/Data"
 
@@ -6,12 +9,12 @@
 
 # Vincent at home
 
-if(Sys.info()["user"] == "Tomas"){
-  dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2010/Data"
-} else {
-  dataPath <- "D:/Analyses/CIMMYT/NutritionTZA/SurveyData/2010/Data"
-}
-setwd("D:/Analyses/CIMMYT/NutritionTZA")
+#if(Sys.info()["user"] == "Tomas"){
+#  dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2010/Data"
+#} else {
+#  dataPath <- "D:/Analyses/CIMMYT/NutritionTZA/SurveyData/2010/Data"
+#}
+#setwd("D:/Analyses/CIMMYT/NutritionTZA")
 
 # load packages
 library("haven")
@@ -28,8 +31,8 @@ options(scipen=999)
 #Creation of DDS and FVS
 # ***************************************************************************************************
 
-FOOD2010 <- read_dta(file.path(dataPath, "/TZNPS2HH3DTA/HH_SEC_K1.dta"))
-FOOD2010 <- subset(FOOD2010, select=c(y2_hhid, itemcode, hh_k01_2))
+FOOD2010 <- read_dta(file.path(dataPath, "/TZNPS2HH3DTA/HH_SEC_K1.dta")) %>%
+  dplyr::select(hhid=y2_hhid, itemcode, hh_k01_2)
 
 # How food items are connected to food groups, See FAO (2013) 
 # 2-13       100       cereals = mean(cereals, na.rm = TRUE),
@@ -47,15 +50,15 @@ FOOD2010 <- subset(FOOD2010, select=c(y2_hhid, itemcode, hh_k01_2))
 
 # Construct dummy variables for food items
 NUTR2010 <-
-  mutate(FOOD2010, count = ifelse(hh_k01_2 == 1, 1, ifelse(NA))) %>%
-  group_by(y2_hhid) %>%
-  spread(itemcode, count) %>%
-  select( -hh_k01_2) %>%
-  filter (! duplicated(y2_hhid)) %>%
+  mutate(FOOD2010, countv1 = ifelse(hh_k01_2 == 1, 1, ifelse(NA))) %>%
+  group_by(hhid) %>%
+  spread(itemcode, countv1) %>%
+#  select( -hh_k01_2) %>%
+  filter (! duplicated(hhid)) %>%
   replace(is.na(.), 0)
 
 # Remove skq1 and skcode variables which are useless at household level
-#NUTR2008 <-NUTR2008[-c(2,3)]
+NUTR2010 <-NUTR2010[-c(2)]
 
 # Columns correspond to list of food items!
 # sum fooditems into 12 foodgroups for FVS: columns correspond to list of food items!
@@ -102,11 +105,11 @@ NUTR2010 <- mutate(NUTR2010,
                      sugar +
                      condiments )
 
-# Constructuion of FVS
+# Construction of FVS
 NUTR2010$FVS <- rowSums(NUTR2010[2:60])
 
 # Construction of household database with FVS and DDS variable
-by_hhid <- group_by(NUTR2010, y2_hhid)
+by_hhid <- group_by(NUTR2010, hhid)
 
 # Remove the coolums with food items variables
 by_hhid <- by_hhid[ -c(2:59) ]
@@ -126,7 +129,7 @@ by_hhid <- by_hhid[ -c(2:59) ]
 #             sugar=mean(sugar, na.rm=TRUE),
 #             condiments=mean(condiments, na.rm=TRUE))
 
-saveRDS(by_hhid, file="Data/Nutrition indicators TZA 2010.Rda")
+#saveRDS(by_hhid, file="Data/Nutrition indicators TZA 2010.Rda")
 
 # descriptives of food group dummy variables and FVS and DDS
 descriptive.table(vars = d(cereals, rootsandtubers, vegetables, pulsesandnuts, fruits, meat, eggs, fishandseafood,
@@ -149,52 +152,72 @@ rm(by_hhidsub, myvars)
 plot(by_hhid$DDS, by_hhid$FVS, main="Coherence between DDS and FVS in 2010", 
      xlab="DDS ", ylab="FVS ", pch=19) 
 
-FNS2010 <- subset(by_hhid, select=c(y2_hhid,DDS,FVS))
+FNS2010 <- subset(by_hhid, select=c(hhid,DDS,FVS))
 
 
 # ***************************************************************************************************
 #Construction of FCS
 # ***************************************************************************************************
 
-HH_SEC_K2_2010 <- read_dta(file.path(dataPath, "/TZNPS2HH2DTA/HH_SEC_K2.dta"))
+FCS_data  <- read_dta(file.path(dataPath, "/TZNPS2HH2DTA/HH_SEC_K2.dta")) %>%
+                 dplyr::select(hhid=y2_hhid, itemcode, item=hh_k08_2, ndays=hh_k08_3)         
 
-FCS2010 <- group_by(HH_SEC_K2_2010, y2_hhid) %>% 
-  na.omit() %>%
-#  select(y2_hhid, itemcode, hh_k08_3) %>%
-  spread(itemcode, hh_k08_3) %>% 
-#  mutate(AB = A+B) %>%
-#  select(-A, -B) %>%
-#  mutate(AB=replace(AB, AB>=7, 7)) %>%
-  rename(main_staples=A, less_staples=B, pulses_nuts=C, vegetables=D, meat_fish=E, fruits=F, milk=G, oil=H, sugar=I, condiments=J)
+
+FCS_data$Cereals      <- ifelse(FCS_data$ndays>0 & FCS_data$itemcode=="A", FCS_data$ndays, 0)
+FCS_data$Roots_tubers <- ifelse(FCS_data$ndays>0 & FCS_data$itemcode=="B", FCS_data$ndays, 0)
+FCS_data$Pulses_nuts  <- ifelse(FCS_data$ndays>0 & FCS_data$itemcode=="C", FCS_data$ndays, 0)
+FCS_data$Vegetables   <- ifelse(FCS_data$ndays>0 & FCS_data$itemcode=="D", FCS_data$ndays, 0)
+FCS_data$Meat_fish    <- ifelse(FCS_data$ndays>0 & FCS_data$itemcode=="E", FCS_data$ndays, 0)
+FCS_data$Fruits       <- ifelse(FCS_data$ndays>0 & FCS_data$itemcode=="F", FCS_data$ndays, 0)
+FCS_data$Milk         <- ifelse(FCS_data$ndays>0 & FCS_data$itemcode=="G", FCS_data$ndays, 0)
+FCS_data$Fats_oils    <- ifelse(FCS_data$ndays>0 & FCS_data$itemcode=="H", FCS_data$ndays, 0)
+FCS_data$Sugars       <- ifelse(FCS_data$ndays>0 & FCS_data$itemcode=="I", FCS_data$ndays, 0)
+FCS_data$Condiments   <- ifelse(FCS_data$ndays>0 & FCS_data$itemcode=="J", FCS_data$ndays, 0)
+
+FCS2010 <- group_by(FCS_data, hhid) %>%
+  summarize(Cereals      = sum(Cereals), 
+            Roots_tubers = sum(Roots_tubers),
+            Pulses_nuts  = sum(Pulses_nuts),
+            Vegetables   = sum(Vegetables),
+            Meat_fish    = sum(Meat_fish),
+            Fruits       = sum(Fruits),
+            Milk         = sum(Milk),
+            Fats_oils    = sum(Fats_oils),
+            Sugars       = sum(Sugars),
+            Condiments   = sum(Condiments)  ) 
 
 FCS2010$FCSw <- 
-  FCS2010$main_staples*2 + 
-  FCS2010$less_staples*2 + 
-  FCS2010$pulses_nuts*3 + 
-  FCS2010$vegetables*1 + 
-  FCS2010$fruits*1 + 
-  FCS2010$milk*4 + 
-  FCS2010$meat_fish*4 + 
-  FCS2010$sugar*0.5 + 
-  FCS2010$condiments*0
+  FCS2010$Cereals*2 + 
+  FCS2010$Roots_tubers*2 + 
+  FCS2010$Pulses_nuts*3 + 
+  FCS2010$Vegetables*1 + 
+  FCS2010$Fruits*1 + 
+  FCS2010$Milk*4 + 
+  FCS2010$Meat_fish*4 + 
+  FCS2010$Fats_oils*1 +
+  FCS2010$Sugars*0.5 + 
+  FCS2010$Condiments*0
 
 FCS2010$FCSu <- 
-  FCS2010$main_staples + 
-  FCS2010$less_staples + 
-  FCS2010$pulses_nuts + 
-  FCS2010$vegetables + 
-  FCS2010$fruits + 
-  FCS2010$milk + 
-  FCS2010$meat_fish + 
-  FCS2010$sugar + 
-  FCS2010$condiments
+  FCS2010$Cereals + 
+  FCS2010$Roots_tubers + 
+  FCS2010$Pulses_nuts + 
+  FCS2010$Vegetables + 
+  FCS2010$Fruits + 
+  FCS2010$Milk + 
+  FCS2010$Meat_fish + 
+  FCS2010$Fats_oils +
+  FCS2010$Sugars + 
+  FCS2010$Condiments
 
 #  RM(Food2010,NUTR2010)
 
 # descriptives of food groups (FCS) and FCS weighted and unweighted
-descriptive.table(vars = d(cereals, rootsandtubers, vegetables, pulsesandnuts, fruits, meatandfish,
-                           milkproducts, fatsandoils, sugar,condiments, FCSw, FCSu),data= FCS2010, 
+descriptive.table(vars = d(Cereals, Roots_tubers, Pulses_nuts, Vegetables, Fruits, Meat_fish,
+                           Milk, Fats_oils, Sugars, Condiments, FCSw, FCSu),data= FCS2010, 
                   func.names = c("Mean","St. Deviation", "Min", "Max", "Skew","Valid N"))
+
+#Maximum of Meat_fish is 9!
 
 # Histograms of nutrition indicators: weighted FCS
 hist(FCS2010$FCSw, freq = FALSE, ylim = c(0, 0.02), xlab="FCSw", ylab="%", main="Frequency of FCS (weighted) in 2010")
@@ -205,32 +228,35 @@ hist(FCS2010$FCSu, freq = FALSE, ylim = c(0, 0.05), xlab="FCSw", ylab="%", main=
 # calculation of correlation coefficent of DDS and FVS
 myvars <- c("FCSw", "FCSu")
 FCS2010sub <- FCS2010[myvars]
-cor(FCS2010sub, use="all.obs", method="pearson")
+cor(FCS2010sub, method="pearson")
 rm(FCS2010sub, myvars)
 
-FNS2010 <- left_join(TZA2010, FCSu)
-FNS2010 <- left_join(TZA2010, FCSw)
+myvars <- c("hhid", "FCSw", "FCSu")
+FCS2010 <- FCS2010[myvars]
+
+FNS2010 <- left_join(FNS2010, FCS2010)
 
 
 # ***************************************************************************************************
 #Construction of CSI
 # ***************************************************************************************************
-HH_SEC_I1_2010 <- read_dta(file.path(dataPath, "TZNPS2HH1DTA/HH_SEC_I1.dta"))
-*FOOD2010 <- read_dta(file.path(dataPath, "/TZNPS2HH3DTA/HH_SEC_K1.dta"))
+CSI2010 <- read_dta(file.path(dataPath, "TZNPS2HH1DTA/HH_SEC_I1.dta")) %>%
+  dplyr::select(hhid=y2_hhid, hh_i01, hh_i02_1, hh_i02_2, hh_i02_3, hh_i02_4, hh_i02_5, hh_i02_6, 
+                hh_i02_7, hh_i02_8)
+#*FOOD2010 <- read_dta(file.path(dataPath, "/TZNPS2HH3DTA/HH_SEC_K1.dta"))
 
 #D:\Analyses\CIMMYT\NutritionTZA\SurveyData\2010\Data\TZNPS2HH1DTA
 #D:\Analyses\CIMMYT\NutritionTZA\SurveyData\2010\Data\TZNPS2HH1DTA
 
 descriptive.table(vars = d(hh_i02_1, hh_i02_2, hh_i02_3, hh_i02_4, hh_i02_5, hh_i02_6, 
-                           hh_i02_7, hh_i02_8),data= HH_SEC_I1_2010, 
+                           hh_i02_7, hh_i02_8),data= CSI2010, 
                   func.names = c("Mean","St. Deviation", "Min", "Max", "Skew","Valid N"))
 
-CSI2010 <- 
-  subset(HH_SEC_I1_2010, select=c(y2_hhid, hh_i01, hh_i02_1, hh_i02_2, hh_i02_3, hh_i02_4, hh_i02_5, hh_i02_6, 
-                                   hh_i02_7, hh_i02_8)) %>% na.omit()
+#CSI2010 <- 
+#  subset(HH_SEC_I1_2010, select=c(hhid, hh_i01, hh_i02_1, hh_i02_2, hh_i02_3, hh_i02_4, hh_i02_5, hh_i02_6, 
+#                                   hh_i02_7, hh_i02_8)) %>% na.omit()
 
-CSI2010$CSI <- 
-  CSI2010$hh_i02_1*1 + 
+CSI2010$CSI <- CSI2010$hh_i02_1*1 + 
   CSI2010$hh_i02_2*1 + 
   CSI2010$hh_i02_3*1 + 
   CSI2010$hh_i02_4*1 + 
@@ -239,25 +265,16 @@ CSI2010$CSI <-
   CSI2010$hh_i02_7*0 + 
   CSI2010$hh_i02_8*4
 
-CSI2010<- select(CSI2010, y2_hhid, CSI)
-CSI2010<- mutate(CSI2010, surveyyear=2010) %>% rename(hhid2010=y2_hhid)
-
 descriptive.table(vars = d(hh_i02_1, hh_i02_2, hh_i02_3, hh_i02_4, hh_i02_5, hh_i02_6, 
                            hh_i02_7, hh_i02_8, CSI),data= CSI2010, 
                   func.names = c("Mean","St. Deviation", "Min", "Max", "Skew","Valid N"))
 
-saveRDS(CSI2010, "Data/CSI2010.rds")
+myvars <- c("hhid", "CSI")
+CSI2010<- CSI2010[myvars]
+rm(myvars)
+#CSI2010<- mutate(CSI2010, surveyyear=2010) %>% rename(hhid2010=y2_hhid)
 
-## Add it to the database
-# Household level
-TZA2010 <- left_join(TZA2010, FNS2010)
-#TZA2008 <- left_join(TZA2008, FNS2008); rm(FNS2008)
-## Add it to the database
-# Household level
-TZA2008 <- left_join(TZA2008, DDS); rm(DDS)
-TZA2008 <- left_join(TZA2008, FVS); rm(FVS)
-TZA2008 <- left_join(TZA2008, FCSw); rm(FCSw)
-TZA2008 <- left_join(TZA2008, FCSu); rm(FCSu)
-TZA2008 <- left_join(TZA2008, CSI); rm(CSI)
 
+#saveRDS(CSI2010, "Data/CSI2010.rds")
+FNS2010 <- left_join(FNS2010, CSI2010)
 

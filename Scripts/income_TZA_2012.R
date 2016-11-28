@@ -17,11 +17,12 @@ library(dplyr)
 library(sjmisc)
 library(haven)
 
-if(Sys.info()["user"] == "Tomas"){
-  dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2012/Data"
-} else {
-  dataPath <- "N:/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2010/Data"
-}
+#if(Sys.info()["user"] == "Tomas"){
+#  dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2012/Data"
+#} else {
+#  dataPath <- "N:/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2010/Data"
+#  dataPath <- "D:/Analyses/CIMMYT/NutritionTZA/SurveyData/2012/Data"
+#}
 
 #######################################
 ########## off farm income ############
@@ -34,7 +35,7 @@ if(Sys.info()["user"] == "Tomas"){
 # -------------------------------------
 
 off_farm_income <- read_dta(file.path(dataPath, "/HH_SEC_E.dta")) %>%
-  select(y3_hhid, indidy3,
+  dplyr::select(hhid=y3_hhid, indidy3,
          main_job=hh_e17,
          mj_industry=hh_e21_2, mj_employer=hh_e19,
          mj_months=hh_e29, mj_weekspm=hh_e30,
@@ -56,7 +57,7 @@ off_farm_income$mj_grat_pay <- NA
 off_farm_income$sj_pay <- NA
 off_farm_income$sj_grat_pay <- NA
 
-off_farm_income <- transmute(off_farm_income, y3_hhid, indidy3,
+off_farm_income <- transmute(off_farm_income, hhid, indidy3,
                              main_job, mj_industry, mj_employer,
                              mj_pay=ifelse(mj_pay_period %in% 1, mj_months*mj_weekspm*mj_hourspw*mj_wage, mj_pay),
                              mj_pay=ifelse(mj_pay_period %in% 3, mj_months*mj_weekspm*mj_wage, mj_pay),
@@ -106,7 +107,7 @@ off_farm_income$off_farm_income[miss] <- NA; rm(miss)
 # a measure of total household off farm
 # income
 
-off_farm_income_hh <- group_by(off_farm_income, y3_hhid) %>%
+off_farm_income_hh <- group_by(off_farm_income, hhid) %>%
   summarise(off_farm_income_hh=sum(off_farm_income, na.rm=TRUE))
 rm(off_farm_income)
 
@@ -119,7 +120,7 @@ rm(off_farm_income)
 # -------------------------------------
 
 lr_crop <- read_dta(file.path(dataPath, "/AG_SEC_5A.dta")) %>%
-  select(y3_hhid, crop_code=zaocode, lr_crop_sold=ag5a_01,
+  dplyr::select(hhid=y3_hhid, crop_code=zaocode, lr_crop_sold=ag5a_01,
          lr_crop_qty=ag5a_02, lr_crop_value=ag5a_03,
          lr_customer1=ag5a_04,
          lr_customer1_qty=ag5a_05,
@@ -133,7 +134,7 @@ lr_crop <- read_dta(file.path(dataPath, "/AG_SEC_5A.dta")) %>%
          lr_customer2_year=ag5a_14_2) 
 
 sr_crop <- read_dta(file.path(dataPath, "/AG_SEC_5B.dta")) %>%
-  select(y3_hhid, crop_code=zaocode, sr_crop_sold=ag5b_01,
+  dplyr::select(hhid=y3_hhid, crop_code=zaocode, sr_crop_sold=ag5b_01,
          sr_crop_qty=ag5b_02, sr_crop_value=ag5b_03,
          sr_customer1=ag5b_04,
          sr_customer1_qty=ag5b_05,
@@ -158,7 +159,7 @@ crop <- rbind(sr_crop, lr_crop); rm(lr_crop, sr_crop)
 # calculate the full value of crops
 # per household
 
-on_farm_income_crop <- group_by(crop, y3_hhid) %>%
+on_farm_income_crop <- group_by(crop, hhid) %>%
   summarise(crop_value_hh=sum(crop_value, na.rm=TRUE))
 rm(crop)
 
@@ -169,21 +170,21 @@ rm(crop)
 
 # fruit trees
 fruit <- read_dta(file.path(dataPath, "/AG_SEC_7A.dta")) %>%
-  select(y3_hhid, crop_code=zaocode,
+  dplyr::select(hhid=y3_hhid, crop_code=zaocode,
          sold_fruit=ag7a_02, sold_fruit_kg=ag7a_03, fruit_value=ag7a_04)
 
 # summarise to the household level
-on_farm_income_fruit <- group_by(fruit, y3_hhid) %>%
+on_farm_income_fruit <- group_by(fruit, hhid) %>%
   summarise(fruit_value_hh=sum(fruit_value, na.rm=TRUE))
 rm(fruit)
 
 # permanent crops
 perm <- read_dta(file.path(dataPath, "AG_SEC_7B.dta")) %>%
-  select(y3_hhid, crop_code=zaocode,
+  dplyr::select(hhid=y3_hhid, crop_code=zaocode,
          sold_perm=ag7b_02, sold_perm_kg=ag7b_03, perm_value=ag7b_04)
 
 # summarise to the household level
-on_farm_income_perm <- group_by(perm, y3_hhid) %>%
+on_farm_income_perm <- group_by(perm, hhid) %>%
   summarise(perm_value_hh=sum(perm_value, na.rm=TRUE))
 rm(perm)
 
@@ -194,11 +195,11 @@ rm(perm)
 
 # from rented land - long rainy season
 lr_rent <- read_dta(file.path(dataPath, "AG_SEC_3A.dta")) %>%
-  select(y3_hhid, plotnum, lr_rent=ag3a_04)
+  dplyr::select(hhid=y3_hhid, plotnum, lr_rent=ag3a_04)
 
 # from rented land - short rainy season
 sr_rent <- read_dta(file.path(dataPath, "AG_SEC_3B.dta")) %>%
-  select(y3_hhid, plotnum, sr_rent=ag3b_04)
+  dplyr::select(hhid=y3_hhid, plotnum, sr_rent=ag3b_04)
 
 # treat seasons together as income for one
 # whole year
@@ -210,7 +211,7 @@ sr_rent$season <- "sr"
 rent <- rbind(sr_rent, lr_rent); rm(lr_rent, sr_rent)
 
 # summarise to the household level
-on_farm_income_rent <- group_by(rent, y3_hhid) %>%
+on_farm_income_rent <- group_by(rent, hhid) %>%
   summarise(rent_value_hh=sum(rent, na.rm=TRUE))
 rm(rent)
 
@@ -219,13 +220,13 @@ rm(rent)
 # -------------------------------------
 
 lvstock <- read_dta(file.path(dataPath, "LF_SEC_02.dta")) %>%
-  select(y3_hhid, lvstckid, lvstk_sold=lf02_24,
+  dplyr::select(hhid=y3_hhid, lvstckid, lvstk_sold=lf02_24,
          lvstk_number_sold=lf02_25, lvstk_value=lf02_26,
          slaughter=lf02_29, slaughter_qty=lf02_30,
          slaughter_live_wgt=lf02_31, slaughter_qty_sold=lf02_32,
          slaughter_value=lf02_33)
 
-on_farm_income_lvstock <- group_by(lvstock, y3_hhid) %>%
+on_farm_income_lvstock <- group_by(lvstock, hhid) %>%
   summarise(lvstock_value_hh=sum(lvstk_value, na.rm=TRUE),
             slaughter_value_hh=sum(slaughter_value, na.rm=TRUE))
 rm(lvstock)
@@ -252,5 +253,4 @@ income_2012$income <- with(income_2012,
 # remove all the other data
 rm(off_farm_income_hh, on_farm_income_lvstock,
    on_farm_income_rent, on_farm_income_perm,
-   on_farm_income_fruit, on_farm_income_crop,
-   dataPath)
+   on_farm_income_fruit, on_farm_income_crop)

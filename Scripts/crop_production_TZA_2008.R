@@ -32,13 +32,18 @@
 # -------------------------------------
 
 library(tidyr)
-library(dplyr)
+
 library(haven)
+library(foreign)
+
+detach("package:dplyr", character.only = TRUE)
+library("dplyr", character.only = TRUE)
+
 
 if(Sys.info()["user"] == "Tomas"){
   dataPath <- "C:/Users/Tomas/Documents/LEI/data/TZA/2008/Data"
 } else {
-  dataPath <- "N:/Internationaal Beleid  (IB)/Projecten/2285000066 Africa Maize Yield Gap/SurveyData/TZA/2008/Data"
+  dataPath <- "D:/Analyses/CIMMYT/TZA_Anne/SurveyData/2008/Data"
 }
 
 # -------------------------------------
@@ -117,11 +122,13 @@ crop_prod$area_rel <- crop_prod$harv_area/crop_prod$area_farmer*crop_prod$area_m
 
 fruit <- c(70:74, 76:85, 97:99, 67, 38, 39)
 CCP <- c(53:61, 63:66, 18, 34, 21, 75, 44:46) 
-CTR <- c(11:17, 22:27) 
+CTR <- c(12:15, 17, 22:27) 
 CCNP <- c(50, 51, 53, 62, 19) 
 veg <- c(86:96, 100, 101)
 leg <- c(31, 32, 33, 35, 36, 37, 41, 42, 43, 47, 48)
-other <- c(fruit, CCP, CTR, CCNP, veg, leg)
+maize <- c(11)
+wheat <- c(16)
+other <- c(fruit, CCP, CTR, CCNP, veg, leg, maize, wheat)
 
 # get a variable with the crop group
 crop_prod$type <- character(nrow(crop_prod))
@@ -132,9 +139,9 @@ crop_prod <- mutate(crop_prod,
             type=ifelse(crop_code %in% CCNP, "CCNP", type),
             type=ifelse(crop_code %in% veg, "veg", type),
             type=ifelse(crop_code %in% leg, "leg", type),
-            type=ifelse(crop_code %in% 11, "maize", type), # maize has crop code 11
-            type=ifelse(crop_code %in% 16, "wheat", type),
-            type=ifelse(!crop_code %in% other, "other", type)) # wheat has crop code 16
+            type=ifelse(crop_code %in% maize, "maize", type), # maize has crop code 11
+            type=ifelse(crop_code %in% wheat, "wheat", type), # wheat has crop code 16
+            type=ifelse(!crop_code %in% other, "other", type)) 
 
 # -------------------------------------
 #' finally make 5 dataframes corresponding
@@ -186,3 +193,152 @@ names(crop_prod_area_rel)[1] <- "hhid"
 
 rm(crop_prod_v, crop_prod_w, crop_prod_x,
    crop_prod_y, crop_prod_z)
+
+library(Deducer)
+# Total crop area farmer reported
+crop_prod_x <-crop_prod_area_farmer
+crop_prod_x$CCNP_area_farmer   <- ifelse(is.na(crop_prod_x$CCNP_area_farmer>0) ,0,crop_prod_x$CCNP_area_farmer)
+crop_prod_x$CCP_area_farmer    <- ifelse(is.na(crop_prod_x$CCP_area_farmer>0)  ,0,crop_prod_x$CCP_area_farmer)
+crop_prod_x$CTR_area_farmer    <- ifelse(is.na(crop_prod_x$CTR_area_farmer>0)  ,0,crop_prod_x$CTR_area_farmer)
+crop_prod_x$fruit_area_farmer  <- ifelse(is.na(crop_prod_x$fruit_area_farmer>0),0,crop_prod_x$fruit_area_farmer)
+crop_prod_x$leg_area_farmer    <- ifelse(is.na(crop_prod_x$leg_area_farmer>0)  ,0,crop_prod_x$leg_area_farmer)
+crop_prod_x$veg_area_farmer    <- ifelse(is.na(crop_prod_x$veg_area_farmer>0)  ,0,crop_prod_x$veg_area_farmer)
+crop_prod_x$maize_area_farmer  <- ifelse(is.na(crop_prod_x$maize_area_farmer>0),0,crop_prod_x$maize_area_farmer)
+crop_prod_x$wheat_area_farmer  <- ifelse(is.na(crop_prod_x$wheat_area_farmer>0),0,crop_prod_x$wheat_area_farmer)
+crop_prod_x$other_area_farmer  <- ifelse(is.na(crop_prod_x$other_area_farmer>0),0,crop_prod_x$other_area_farmer)
+
+crop_prod_x$total_area_farmer <- crop_prod_x$CCNP_area_farmer    + crop_prod_x$CCP_area_farmer + 
+                                   crop_prod_x$CTR_area_farmer   + crop_prod_x$fruit_area_farmer +
+                                   crop_prod_x$leg_area_farmer   + crop_prod_x$veg_area_farmer + 
+                                   crop_prod_x$maize_area_farmer + crop_prod_x$wheat_area_farmer + 
+                                   crop_prod_x$other_area_farmer
+descriptive.table(vars = d(total_area_farmer), data= crop_prod_x, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+
+crop_prod_x$total_area_farmer <- ifelse(crop_prod_x$total_area_farmer == 0, NA, crop_prod_x$total_area_farmer)
+descriptive.table(vars = d(total_area_farmer), data= crop_prod_x, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+crop_prod_x <- crop_prod_x[ c("hhid", "total_area_farmer") ]
+crop_prod_area_farmer <- left_join(crop_prod_area_farmer, crop_prod_x)
+
+#Total area by GPS registration (25% of the households!)
+crop_prod_x <-crop_prod_area_gps
+crop_prod_x$CCNP_area_gps   <- ifelse(is.na(crop_prod_x$CCNP_area_gps>0) ,0,crop_prod_x$CCNP_area_gps)
+crop_prod_x$CCP_area_gps    <- ifelse(is.na(crop_prod_x$CCP_area_gps>0)  ,0,crop_prod_x$CCP_area_gps)
+crop_prod_x$CTR_area_gps    <- ifelse(is.na(crop_prod_x$CTR_area_gps>0)  ,0,crop_prod_x$CTR_area_gps)
+crop_prod_x$fruit_area_gps  <- ifelse(is.na(crop_prod_x$fruit_area_gps>0),0,crop_prod_x$fruit_area_gps)
+crop_prod_x$leg_area_gps    <- ifelse(is.na(crop_prod_x$leg_area_gps>0)  ,0,crop_prod_x$leg_area_gps)
+crop_prod_x$veg_area_gps    <- ifelse(is.na(crop_prod_x$veg_area_gps>0)  ,0,crop_prod_x$veg_area_gps)
+crop_prod_x$maize_area_gps  <- ifelse(is.na(crop_prod_x$maize_area_gps>0),0,crop_prod_x$maize_area_gps)
+crop_prod_x$wheat_area_gps  <- ifelse(is.na(crop_prod_x$wheat_area_gps>0),0,crop_prod_x$wheat_area_gps)
+crop_prod_x$other_area_gps  <- ifelse(is.na(crop_prod_x$other_area_gps>0),0,crop_prod_x$other_area_gps)
+
+crop_prod_x$total_area_gps <- crop_prod_x$CCNP_area_gps + crop_prod_x$CCP_area_gps+ 
+  crop_prod_x$CTR_area_gps   + crop_prod_x$fruit_area_gps +
+  crop_prod_x$leg_area_gps   + crop_prod_x$other_area_gps + 
+  crop_prod_x$maize_area_gps + crop_prod_x$wheat_area_gps + 
+  crop_prod_x$veg_area_gps
+descriptive.table(vars = d(total_area_gps), data= crop_prod_x, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+
+crop_prod_x$total_area_gps <- ifelse(crop_prod_x$total_area_gps == 0, NA, crop_prod_x$total_area_gps)
+
+descriptive.table(vars = d(total_area_gps), data= crop_prod_x, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+
+crop_prod_x <- crop_prod_x[ c("hhid", "total_area_gps") ]
+crop_prod_area_farmer <- left_join(crop_prod_area_gps, crop_prod_x)
+
+#Total area mix of farm reported and GPS registration
+crop_prod_x <-crop_prod_area_mix
+crop_prod_x$CCNP_area_mix   <- ifelse(is.na(crop_prod_x$CCNP_area_mix>0) ,0,crop_prod_x$CCNP_area_mix)
+crop_prod_x$CCP_area_mix    <- ifelse(is.na(crop_prod_x$CCP_area_mix>0)  ,0,crop_prod_x$CCP_area_mix)
+crop_prod_x$CTR_area_mix    <- ifelse(is.na(crop_prod_x$CTR_area_mix>0)  ,0,crop_prod_x$CTR_area_mix)
+crop_prod_x$fruit_area_mix  <- ifelse(is.na(crop_prod_x$fruit_area_mix>0),0,crop_prod_x$fruit_area_mix)
+crop_prod_x$leg_area_mix    <- ifelse(is.na(crop_prod_x$leg_area_mix>0)  ,0,crop_prod_x$leg_area_mix)
+crop_prod_x$veg_area_mix    <- ifelse(is.na(crop_prod_x$veg_area_mix>0)  ,0,crop_prod_x$veg_area_mix)
+crop_prod_x$maize_area_mix  <- ifelse(is.na(crop_prod_x$maize_area_mix>0),0,crop_prod_x$maize_area_mix)
+crop_prod_x$wheat_area_mix  <- ifelse(is.na(crop_prod_x$wheat_area_mix>0),0,crop_prod_x$wheat_area_mix)
+crop_prod_x$other_area_mix  <- ifelse(is.na(crop_prod_x$other_area_mix>0),0,crop_prod_x$other_area_mix)
+
+crop_prod_x$total_area_mix <- crop_prod_x$CCNP_area_mix+crop_prod_x$CCP_area_mix + 
+  crop_prod_x$CTR_area_mix   + crop_prod_x$fruit_area_mix +
+  crop_prod_x$leg_area_mix   + crop_prod_x$maize_area_mix + 
+  crop_prod_x$wheat_area_mix + crop_prod_x$other_area_mix + 
+  crop_prod_x$veg_area_mix
+descriptive.table(vars = d(total_area_mix), data= crop_prod_x, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+
+crop_prod_x$total_area_mix <- ifelse(crop_prod_x$total_area_mix == 0, NA, crop_prod_x$total_area_mix)
+
+descriptive.table(vars = d(total_area_mix), data= crop_prod_x, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+
+crop_prod_x <- crop_prod_x[ c("hhid", "total_area_gps") ]
+crop_prod_area_farmer <- left_join(crop_prod_area_gps, crop_prod_x)
+
+crop_prod_area_gps$total_area_gps <- crop_prod_area_gps$CCNP_area_gps  + crop_prod_area_gps$CCP_area_gps + 
+                                     crop_prod_area_gps$CTR_area_gps   + crop_prod_area_gps$fruit_area_gps +
+                                     crop_prod_area_gps$leg_area_gps   + crop_prod_area_gps$maize_area_gps +
+                                     crop_prod_area_gps$wheat_area_gps + crop_prod_area_gps$other_area_gps + 
+                                     crop_prod_area_gps$veg_area_gps
+
+crop_prod_area_mix$total_area_mix <- crop_prod_area_mix$CCNP_area_mix + crop_prod_area_mix$CCP_area_mix+ 
+  crop_prod_area_mix$CTR_area_mix   + crop_prod_area_mix$fruit_area_mix +
+  crop_prod_area_mix$leg_area_mix   + crop_prod_area_mix$maize_area_mix +
+  crop_prod_area_mix$wheat_area_mix + crop_prod_area_mix$other_area_mix + 
+  crop_prod_area_mix$veg_area_mix
+
+crop_prod_area_rel$total_area_rel <- crop_prod_area_rel$CCNP_area_rel+crop_prod_area_rel$CCP_area_rel+ 
+  crop_prod_area_rel$CTR_area_rel + crop_prod_area_rel$fruit_area_rel+
+  crop_prod_area_rel$leg_area_rel + crop_prod_area_rel$maize_area_rel+
+  crop_prod_area_rel$wheat_area_rel + crop_prod_area_rel$other_area_rel+ 
+  crop_prod_area_rel$veg_area_rel
+
+crop_prod_harv_area$total_harv_area <- crop_prod_harv_area$CCNP_harv_area + crop_prod_harv_area$CCP_harv_area+ 
+  crop_prod_harv_area$CTR_harv_area   + crop_prod_harv_area$fruit_harv_area +
+  crop_prod_harv_area$leg_harv_area   + crop_prod_harv_area$maize_harv_area +
+  crop_prod_harv_area$wheat_harv_area + crop_prod_harv_area$other_harv_area + 
+  crop_prod_harv_area$veg_harv_area
+
+
+
+descriptive.table(vars = d(CCNP_area_farmer, CCP_area_farmer, CTR_area_farmer, fruit_area_farmer,
+                           leg_area_farmer, veg_area_farmer, other_area_farmer, total_area_farmer,
+                           maize_area_farmer, wheat_area_farmer), data= crop_prod_area_farmer, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+
+descriptive.table(vars = d(CCNP_area_gps, CCP_area_gps, CTR_area_gps, fruit_area_gps,
+                           leg_area_gps, veg_area_gps, other_area_gps, total_area_gps,
+                           maize_area_gps, wheat_area_gps), data= crop_prod_area_gps, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+
+descriptive.table(vars = d(CCNP_area_mix, CCP_area_mix, CTR_area_mix, fruit_area_mix,
+                           leg_area_mix, veg_area_mix, other_area_mix, total_area_mix,
+                           maize_area_mix, wheat_area_mix), data= crop_prod_area_mix, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+
+descriptive.table(vars = d(CCNP_area_rel, CCP_area_rel, CTR_area_rel, fruit_area_rel,
+                           leg_area_rel, veg_area_rel, other_area_rel, total_area_rel,
+                           maize_area_rel, wheat_area_rel), data= crop_prod_area_rel, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+
+descriptive.table(vars = d(CCNP_harv_area, CCP_harv_area, CTR_harv_area, fruit_harv_area,
+                           leg_harv_area, veg_harv_area, other_harv_area, total_harv_area,
+                           maize_harv_area, wheat_harv_area), data= crop_prod_harv_area, 
+                  func.names = c("Mean", "St. Deviation", "Min", "Max", "Valid N"))
+
+TZA2008HH <- left_join(TZA2008HH, crop_prod_area_rel) 
+rm(CCNP, CCP,CTR,fruit, leg, other, veg, maize, wheat)
+
+saveRDS(crop_prod_harv_area,   "Data/Crop_prod_harv_area_2008.rds")
+saveRDS(crop_prod_area_farmer, "Data/Crop_prod_area_farmer_2008.rds")
+saveRDS(crop_prod_area_gps,    "Data/Crop_prod_area_gps_2008.rds")
+saveRDS(crop_prod_area_rel,    "Data/Crop_prod_area_rel_2008.rds")
+saveRDS(crop_prod_area_mix,    "Data/Crop_prod_area_mix_2008.rds")
+
+
+rm(TZA2008HH_x)
+rm("crop_prod_area_farmer","crop_prod_area_farmer","crop_prod_area_gps", "crop_prod_harv_area" )
+rm("crop_prod", "crop_prod_area_mix", "crop_prod_x")
+
